@@ -1,5 +1,12 @@
 $kind: http-request
 name: Predict
-url: ""
-method: GET
+url: http://localhost:8000/predict
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"text\": \"The cheese kottu was absolutely phenomenal, but the delivery driver was incredibly rude and refused to come to the door.\"\r
+
+    }"
 order: 1777353591955
