@@ -1,0 +1,5 @@
+$kind: http-request
+name: Predict
+url: ""
+method: GET
+order: 1777353591955
