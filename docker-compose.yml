@@ -1,0 +1,20 @@
+services:
+  # Backend BERT API
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./Backend/model:/app/model
+
+  # Frontend Streamlit UI
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    depends_on:
+      - backend
