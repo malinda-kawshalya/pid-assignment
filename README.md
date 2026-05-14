@@ -1,20 +1,27 @@
 # Emotion-Based Promotion Recommendation Prototype
 
-This repository contains a step-by-step implementation prototype for your PID project:
-- Emotion classification from review text
-- Promotion recommendation mapping
-- Streamlit web interface
-- Basic analytics dashboard
+This repository contains the full end-to-end implementation for the Emotion-Based Promotion Recommendation System:
+- Emotion classification from review text via a dual-model architecture (Baseline/TextBlob and Fine-Tuned BERT).
+- Dynamic emotion-to-promotion recommendation mapping engine.
+- Modern, interactive Streamlit web interface (Live, Batch, Dashboard).
+- Fast and scalable FastAPI backend for Deep Learning inference.
+- Business intelligence analytics dashboard.
 
 ## Quick Start
 
-1. Create and activate virtual environment.
-2. Install dependencies:
+1. **Backend Engine (BERT)**:
+   Navigate to the `Backend/` folder, ensure model weights are present, and run via Docker:
    ```bash
-   pip install -r requirements.txt
+   cd Backend
+   docker build -t restaurant-bert-api .
+   docker run -p 8000:8000 restaurant-bert-api
    ```
-3. Run app:
+2. **Frontend Application (Streamlit)**:
+   In a new terminal, activate a virtual environment, install dependencies, and run:
    ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # Or .\.venv\Scripts\Activate.ps1 on Windows
+   pip install -r requirements.txt
    streamlit run src/app.py
    ```
 
@@ -25,20 +32,28 @@ If you are moving the project to a new Windows client PC, follow the step-by-ste
 ## Project Structure
 
 ```text
+Backend/
+  app.py                 # FastAPI backend for BERT inference
+  Dockerfile
+  model/                 # Fine-tuned model weights (requires manual download)
+
 src/
-  app.py
+  app.py                 # Main Streamlit Frontend Application
+  train_model.py         # Script to train the baseline Logistic Regression model
   emotion_promo/
-    config.py
-    preprocessing.py
-    model.py
-    recommender.py
-    analytics.py
+    config.py            # Rules and keywords for emotions and promotions
+    preprocessing.py     # Text cleaning utilities
+    model.py             # Baseline emotion classifier
+    recommender.py       # Recommendation mapping logic
+    analytics.py         # Session event storage for BI
 
 data/
   sample_reviews.csv
 
 docs/
+  CLIENT_INSTALLATION_README.md
   IMPLEMENTATION_PLAN.md
+  REPORT_DOCUMENTATION.md # Comprehensive documentation for report writing
 ```
 
 ## Current MVP Behavior
