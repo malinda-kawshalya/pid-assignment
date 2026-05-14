@@ -376,10 +376,10 @@ def render_hero() -> None:
 def render_kpi_strip(events: pd.DataFrame) -> None:
     cols = st.columns(5)
     
-    if st.session_state.get("model_choice") == "BERT API (Backend)":
-        model_state = "BERT API"
+    if st.session_state.get("model_choice") == "BERT":
+        model_state = "BERT"
     else:
-        model_state = "Trained Model" if classifier.model is not None else "Heuristic"
+        model_state = "TextBlob"
         
     kpis = [
         ("Events", f"{len(events)}"),
@@ -454,7 +454,7 @@ def render_live_screen() -> None:
             if not review_text.strip():
                 st.warning("Enter a review before analysis.")
             else:
-                if st.session_state.get("model_choice") == "BERT API (Backend)":
+                if st.session_state.get("model_choice") == "BERT":
                     prediction = get_bert_prediction(review_text)
                 else:
                     prediction = classifier.predict(review_text)
@@ -520,7 +520,7 @@ def render_batch_screen() -> None:
 
         records = []
         for review in df["review"].fillna("").astype(str):
-            if st.session_state.get("model_choice") == "BERT API (Backend)":
+            if st.session_state.get("model_choice") == "BERT":
                 pred = get_bert_prediction(review)
             else:
                 pred = classifier.predict(review)
@@ -687,7 +687,7 @@ with st.sidebar:
     st.markdown("### Inference Engine")
     st.radio(
             "Select Model",
-            ["Local (TextBlob/Heuristic)", "BERT API (Backend)"],
+            ["TextBlob", "BERT"],
             key="model_choice",
             label_visibility="collapsed",
         )
