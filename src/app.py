@@ -5,9 +5,10 @@ from io import StringIO
 
 import pandas as pd
 import plotly.express as px
+import requests
 import streamlit as st
 
-from emotion_promo.config import EMOTIONS, PROMOTION_RULES
+from emotion_promo.config import EMOTIONS, PROMOTION_RULES, Prediction
 from emotion_promo.analytics import SessionEventStore
 from emotion_promo.model import EmotionClassifier
 from emotion_promo.recommender import map_emotion_to_promotion
@@ -325,6 +326,35 @@ classifier = st.session_state.classifier
 event_store = st.session_state.event_store
 events_preview = event_store.to_frame()
 
+def get_bert_prediction(text: str) -> Prediction:
+    url = "http://backend:8000/predict"
+    try:
+        response = requests.post(url, json={"text": text}, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            # rating_str is formatted like "5 Stars"
+            rating_str = data.get("predicted_rating", "3 Stars")
+            rating = int(rating_str.split()[0])
+            # Convert API's percentage confidence to a 0.0-1.0 float format
+            confidence = data.get("confidence_score", 0.0) / 100.0
+            
+            # Map 1-5 rating to frontend emotion classes
+            if rating >= 4:
+                emotion = "Happy"
+            elif rating == 3:
+                emotion = "Neutral"
+            elif rating == 2:
+                emotion = "Sad"
+            else:
+                emotion = "Frustrated"
+                
+            return Prediction(emotion=emotion, confidence=confidence)
+        else:
+            st.error(f"Backend API Error: {response.text}")
+            return Prediction(emotion="Neutral", confidence=0.0)
+    except requests.exceptions.RequestException as e:
+        st.error(f"Failed to connect to BERT Backend at {url}. Is it running? Error: {e}")
+        return Prediction(emotion="Neutral", confidence=0.0)
 
 def render_hero() -> None:
     st.markdown(
@@ -345,7 +375,12 @@ def render_hero() -> None:
 
 def render_kpi_strip(events: pd.DataFrame) -> None:
     cols = st.columns(5)
-    model_state = "Trained Model" if classifier.model is not None else "Heuristic"
+    
+    if st.session_state.get("model_choice") == "BERT API (Backend)":
+        model_state = "BERT API"
+    else:
+        model_state = "Trained Model" if classifier.model is not None else "Heuristic"
+        
     kpis = [
         ("Events", f"{len(events)}"),
         ("Emotion Classes", f"{len(EMOTIONS)}"),
@@ -419,7 +454,11 @@ def render_live_screen() -> None:
             if not review_text.strip():
                 st.warning("Enter a review before analysis.")
             else:
-                prediction = classifier.predict(review_text)
+                if st.session_state.get("model_choice") == "BERT API (Backend)":
+                    prediction = get_bert_prediction(review_text)
+                else:
+                    prediction = classifier.predict(review_text)
+                
                 promo = map_emotion_to_promotion(prediction.emotion)
 
                 st.session_state.latest_result = {
@@ -481,7 +520,11 @@ def render_batch_screen() -> None:
 
         records = []
         for review in df["review"].fillna("").astype(str):
-            pred = classifier.predict(review)
+            if st.session_state.get("model_choice") == "BERT API (Backend)":
+                pred = get_bert_prediction(review)
+            else:
+                pred = classifier.predict(review)
+                
             promo = map_emotion_to_promotion(pred.emotion)
             records.append(
                 {
@@ -640,6 +683,14 @@ with st.sidebar:
         ],
         label_visibility="collapsed",
     )
+
+    st.markdown("### Inference Engine")
+    st.radio(
+            "Select Model",
+            ["Local (TextBlob/Heuristic)", "BERT API (Backend)"],
+            key="model_choice",
+            label_visibility="collapsed",
+        )
 
     st.markdown(
         """
